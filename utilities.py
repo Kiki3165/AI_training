@@ -1,7 +1,6 @@
 import h5py
 import numpy as np
 
-
 def load_data():
     train_dataset = h5py.File('datasets/trainset.hdf5', "r")
     X_train = np.array(train_dataset["X_train"][:]) # your train set features
