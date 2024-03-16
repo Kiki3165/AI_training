@@ -10,7 +10,7 @@ y = y.reshape((y.shape[0], 1))
 print('dimensions de X:', X.shape)
 print('dimensions de y:', y.shape)
 
-plt.scatter(X[:,0], X[:, 1], c=y, cmap='summer')
+plt.scatter(X[:,0], X[:, 1], c=y, cmap='magma')
 plt.show()
 
 def initialisation(X):
@@ -26,8 +26,10 @@ def model(X, W, b):
     return (A)
 
 def log_loss(A, y):
+    
+    epsilon = 1e-15
 
-    return 1 / len(y) * np.sum(-y * np.log(A) - (1 - y) * np.log(1 - A))
+    return 1 / len(y) * np.sum(-y * np.log(A + epsilon) - (1 - y) * np.log(1 - A + epsilon))
 
 def gradients(A, X, y):
     
@@ -53,6 +55,7 @@ def artificial_neuron(X, y, learning_rate = 0.1, n_iteration = 100):
     W, b = initialisation(X)
     Loss = []
     
+    # boucle d'apprentissage
     for i in range(n_iteration):
         A = model(X, W, b)
         Loss.append(log_loss(A, y))
