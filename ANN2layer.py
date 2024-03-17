@@ -101,7 +101,7 @@ def predict(X, parametres):
     A2 = activations['A2']
     return A2 >= 0.5
 
-def neural_network(X_train, y_train, n1, learning_rate=0.1, n_iter=1000):
+def neural_network(X_train, y_train, n1, learning_rate=1, n_iter=1000):
 
     n0 = X_train.shape[0]
     n2 = y_train.shape[0]
@@ -134,22 +134,37 @@ def neural_network(X_train, y_train, n1, learning_rate=0.1, n_iter=1000):
     return parametres
 
 # Appel de la fonction neural_network à l'extérieur
-parametres = neural_network(X, y, n1=2, n_iter=1000, learning_rate=0.1)
+parametres = neural_network(X, y, n1=128, n_iter=1000, learning_rate=0.1)
+
 
 
 def update_plot(frame):
     global X, y, ax, parametres
+    # Mettre à jour les données d'entrée
+    X, y = make_circles(n_samples=100, noise=0.1, factor=0.3, random_state=frame)
+    X = X.T
+    y = y.reshape((1, y.shape[0]))
+    
     ax.clear()
-    xx, yy = np.meshgrid(np.linspace(X[0, :].min(), X[0, :].max(), 100),
-                         np.linspace(X[1, :].min(), X[1, :].max(), 100))
+    xx, yy = np.meshgrid(np.linspace(X[0, :].min(), X[0, :].max(), 500),
+                         np.linspace(X[1, :].min(), X[1, :].max(), 500))
     Z = predict(np.c_[xx.ravel(), yy.ravel()].T, parametres)
     Z = Z.reshape(xx.shape)
-    ax.contourf(xx, yy, Z, alpha=0.3)
-    ax.scatter(X[0, :], X[1, :], c=y, cmap='summer')
-    plt.title('Frontière de décision en temps réel')
-    plt.xlabel('X1')
-    plt.ylabel('X2')
-    plt.axis('equal')
+    ax.contourf(xx, yy, Z, cmap='coolwarm', alpha=0.6, levels=1)  # Utiliser cmap='coolwarm' pour un style météo
+    scatter = ax.scatter(X[0, :], X[1, :], c=y, cmap='coolwarm', edgecolors='black', linewidths=1, marker='o', label='Data Points', s=50)
+    plt.title('Decision Boundary in Real Time', fontsize=18, fontweight='bold', color='navy')
+    plt.xlabel('X1', fontsize=14, fontweight='bold', color='navy')
+    plt.ylabel('X2', fontsize=14, fontweight='bold', color='navy')
+    plt.xticks(fontsize=12, fontweight='bold', color='navy')
+    plt.yticks(fontsize=12, fontweight='bold', color='navy')
+    plt.legend(handles=[scatter], loc='upper right', fontsize=12)  # Inclure le scatter dans la légende
+
+    # Calculer la précision en temps réel
+    y_pred = predict(X, parametres)
+    current_accuracy = accuracy_score(y.flatten(), y_pred.flatten())
+    plt.text(0.95, 0.95, 'Accuracy: {:.2f}%'.format(current_accuracy * 100),
+             horizontalalignment='right', verticalalignment='top',
+             transform=ax.transAxes, fontsize=14, fontweight='bold', color='black', bbox=dict(facecolor='white', alpha=0.7))
 
 # Générer les données
 X, y = make_circles(n_samples=100, noise=0.1, factor=0.3, random_state=0)
@@ -157,5 +172,5 @@ X = X.T
 y = y.reshape((1, y.shape[0]))
 
 fig, ax = plt.subplots()
-ani = FuncAnimation(fig, update_plot, interval=1000, cache_frame_data=False)
+ani = FuncAnimation(fig, update_plot, interval=1000/60, cache_frame_data=False, frames=120)
 plt.show()

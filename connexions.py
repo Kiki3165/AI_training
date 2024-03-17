@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.datasets import make_blobs
 from sklearn.metrics import accuracy_score
+from tqdm import tqdm
 
 
 X, y = make_blobs(n_samples=100, n_features=2, centers=2, random_state=0)
@@ -50,24 +51,46 @@ def predict(X, W, b):
 
 from sklearn.metrics import accuracy_score
 
-def artificial_neuron(X, y, learning_rate = 0.1, n_iteration = 100):
-    
-    W, b = initialisation(X)
-    Loss = []
-    
-    # boucle d'apprentissage
-    for i in range(n_iteration):
-        A = model(X, W, b)
-        Loss.append(log_loss(A, y))
-        dW, db = gradients(A, X, y)
+def artificial_neuron(X_train, y_train, X_test, y_test, learning_rate = 0.1, n_iter = 100):
+    # initialisation W, b
+    W, b = initialisation(X_train)
+
+    train_loss = []
+    train_acc = []
+    test_loss = []
+    test_acc = []
+
+    for i in tqdm(range(n_iter)):
+        A = model(X_train, W, b)
+
+        if i %10 == 0:
+            # Train
+            train_loss.append(log_loss(A, y_train))
+            y_pred = predict(X_train, W, b)
+            train_acc.append(accuracy_score(y_train, y_pred))
+
+            # Test
+            A_test = model(X_test, W, b)
+            test_loss.append(log_loss(A_test, y_test))
+            y_pred = predict(X_test, W, b)
+            test_acc.append(accuracy_score(y_test, y_pred))
+
+        # mise a jour
+        dW, db = gradients(A, X_train, y_train)
         W, b = update(dW, db, W, b, learning_rate)
-        
-    y_pred = predict(X, W, b)
-    print(accuracy_score(y, y_pred))
-        
-    plt.plot(Loss)
-    plt.show
-    
+
+
+    plt.figure(figsize=(12, 4))
+    plt.subplot(1, 2, 1)
+    plt.plot(train_loss, label='train loss')
+    plt.plot(test_loss, label='test loss')
+    plt.legend()
+    plt.subplot(1, 2, 2)
+    plt.plot(train_acc, label='train acc')
+    plt.plot(test_acc, label='test acc')
+    plt.legend()
+    plt.show()
+
     return (W, b)
 
 W, b = artificial_neuron(X, y)
