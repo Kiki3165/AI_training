@@ -134,18 +134,6 @@ def neural_network(X_train, y_train, n1, learning_rate=1, n_iter=1000):
     return parametres
 
 # Appel de la fonction neural_network à l'extérieur
-parametres = neural_network(X, y, n1=128, n_iter=1000, learning_rate=0.1)
-
-import numpy as np
-import matplotlib.pyplot as plt
-from sklearn.datasets import make_circles
-from sklearn.metrics import accuracy_score, log_loss
-from matplotlib.animation import FuncAnimation
-
-# Fonctions de votre code pour initialisation, propagation, rétropropagation, mise à jour, prédiction et réseau neuronal
-# ...
-
-# Appel de la fonction neural_network à l'extérieur
 parametres = neural_network(X, y, n1=64, n_iter=1000, learning_rate=2)
 
 def update_plot(frame):
