@@ -146,7 +146,7 @@ from matplotlib.animation import FuncAnimation
 # ...
 
 # Appel de la fonction neural_network à l'extérieur
-parametres = neural_network(X, y, n1=128, n_iter=1000, learning_rate=0.1)
+parametres = neural_network(X, y, n1=64, n_iter=1000, learning_rate=2)
 
 def update_plot(frame):
     global X, y, ax, parametres
