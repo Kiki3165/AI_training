@@ -142,7 +142,7 @@ plt.title('Dataset')
 plt.show()
 
 # Entraînement du modèle
-training_history, parametres = deep_neural_network(X, y, hidden_layers=(64, 64, 64), learning_rate=0.1, n_iter=3000)
+training_history, parametres = deep_neural_network(X, y, hidden_layers=(124, 124, 124), learning_rate=1, n_iter=3000)
 
 # Tracé de la frontière de décision
 plot_decision_boundary(X, y, parametres)
