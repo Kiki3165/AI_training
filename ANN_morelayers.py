@@ -3,72 +3,52 @@ import matplotlib.pyplot as plt
 from sklearn.datasets import make_blobs, make_circles, make_moons
 from sklearn.metrics import accuracy_score, log_loss
 from tqdm import tqdm
-
-# Génération du dataset
-X, y = make_moons(n_samples=100, noise=0.1, random_state=0)
-
-# Transposition de X
-X = X.T
-
-# Redimensionnement de y
-y = y.reshape((1, y.shape[0]))
-
-# Affichage des dimensions de X et y
-print('dimensions de X:', X.shape)
-print('dimensions de y:', y.shape)
-
-# Affichage du dataset
-plt.scatter(X[0, :], X[1, :], c=y, cmap='summer')
-plt.show()
+from matplotlib.animation import FuncAnimation
 
 def initialisation(dimensions):
     
     parametres = {}
     C = len(dimensions)
+
     np.random.seed(1)
-    
+
     for c in range(1, C):
         parametres['W' + str(c)] = np.random.randn(dimensions[c], dimensions[c - 1])
-        parametres['W' + str(c)] = np.random.randn(dimensions[c], dimensions[c], 1)
+        parametres['b' + str(c)] = np.random.randn(dimensions[c], 1)
 
-        return parametres
+    return parametres
 
-def forwad_propagation(X, parametres):
-    
-    activations = {'A0' : X}
+def forward_propagation(X, parametres):
+    activations = {'A0': X}
     C = len(parametres) // 2
-    
+
     for c in range(1, C + 1):
+        
         Z = parametres['W' + str(c)].dot(activations['A' + str(c - 1)]) + parametres['b' + str(c)]
         activations['A' + str(c)] = 1 / (1 + np.exp(-Z))
-        
-        return activations
+
+    return activations
+
+def back_propagation(y, parametres, activations):
+
+  m = y.shape[1]
+  C = len(parametres) // 2
+
+  dZ = activations['A' + str(C)] - y
+  gradients = {}
+
+  for c in reversed(range(1, C + 1)):
+      
+    gradients['dW' + str(c)] = 1/m * np.dot(dZ, activations['A' + str(c - 1)].T)
+    gradients['db' + str(c)] = 1/m * np.sum(dZ, axis=1, keepdims=True)
     
-    activations = forwad_propagation(X, parametres)
-    
-    for key, val in activations.items():
-        print(key, val.shape)
-        
-def back_propagation(y, activations, parametres):
-    
-    m = y.shape[1]
-    C = len(parametres) // 2
-    
-    dZ = activations['A' + str(c)] - y
-    gradients = {}
-    
-    for c in reversed(range(1, C + 1)):
-        gradients['dW' + str(c)] = 1 / m * np.dot(dZ, activations['A' + str(c - 1)].T)
-        gradients['db' + str(c)] = 1 / m * np.dot(dZ, axis=1, keepdims=True)
-        
-        if c > 1:
-            
-            dZ = np.dot(parametres['W' + str(c)].T, dZ) * activations['A' + str(c - 1)] * (1 - activations['A' + str(c - 1)])
-        
-    return gradients
+    if c > 1:
+      dZ = np.dot(parametres['W' + str(c)].T, dZ) * activations['A' + str(c - 1)] * (1 - activations['A' + str(c - 1)])
+
+  return gradients
 
 def update(gradients, parametres, learning_rate):
-    
+
     C = len(parametres) // 2
 
     for c in range(1, C + 1):
@@ -78,12 +58,14 @@ def update(gradients, parametres, learning_rate):
     return parametres
 
 def predict(X, parametres):
-  activations = forwad_propagation(X, parametres)
+
+  activations = forward_propagation(X, parametres)
   C = len(parametres) // 2
   Af = activations['A' + str(C)]
+
   return Af >= 0.5
 
-def deep_neural_network(X, y, hidden_layers = (16, 16, 16), learning_rate = 0.001, n_iter = 3000):
+def deep_neural_network(X, y, hidden_layers = (16, 16, 16), learning_rate = 1, n_iter = 3000):
     
     # initialisation parametres
     dimensions = list(hidden_layers)
@@ -100,7 +82,7 @@ def deep_neural_network(X, y, hidden_layers = (16, 16, 16), learning_rate = 0.00
     # gradient descent
     for i in tqdm(range(n_iter)):
 
-        activations = forwad_propagation(X, parametres)
+        activations = forward_propagation(X, parametres)
         gradients = back_propagation(y, parametres, activations)
         parametres = update(gradients, parametres, learning_rate)
         Af = activations['A' + str(C)]
@@ -120,4 +102,48 @@ def deep_neural_network(X, y, hidden_layers = (16, 16, 16), learning_rate = 0.00
     plt.legend()
     plt.show()
 
-    return training_history
+    return training_history, parametres
+
+def plot_decision_boundary(X, y, parametres):
+    # Créer une grille d'échantillons dans l'espace d'entrée
+    x_min, x_max = X[0, :].min() - 1, X[0, :].max() + 1
+    y_min, y_max = X[1, :].min() - 1, X[1, :].max() + 1
+    h = 0.01  # pas de la grille
+    xx, yy = np.meshgrid(np.arange(x_min, x_max, h), np.arange(y_min, y_max, h))
+    
+    # Faire des prédictions sur toute la grille
+    Z = predict(np.c_[xx.ravel(), yy.ravel()].T, parametres)
+    Z = Z.reshape(xx.shape)
+    
+    # Afficher la frontière de décision
+    plt.contourf(xx, yy, Z, cmap='Spectral', alpha=0.3)
+    
+    # Afficher les points de données
+    plt.scatter(X[0, :], X[1, :], c=y, cmap='Spectral')
+    plt.xlabel('Feature 1')
+    plt.ylabel('Feature 2')
+    plt.title('Decision Boundary')
+    plt.show()
+
+# Génération du dataset
+X, y = make_moons(n_samples=100, noise=0.1, random_state=0)
+
+# Transposition de X
+X = X.T
+
+# Redimensionnement de y
+y = y.reshape((1, y.shape[0]))
+
+# Affichage du dataset
+plt.scatter(X[0, :], X[1, :], c=y, cmap='summer')
+plt.xlabel('Feature 1')
+plt.ylabel('Feature 2')
+plt.title('Dataset')
+plt.show()
+
+# Entraînement du modèle
+training_history, parametres = deep_neural_network(X, y, hidden_layers=(64, 64, 64), learning_rate=0.1, n_iter=3000)
+
+# Tracé de la frontière de décision
+plot_decision_boundary(X, y, parametres)
+
