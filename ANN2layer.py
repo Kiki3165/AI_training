@@ -3,16 +3,12 @@ import matplotlib.pyplot as plt
 from sklearn.datasets import make_blobs, make_circles
 from sklearn.metrics import accuracy_score, log_loss
 from tqdm import tqdm
+from sklearn.svm import SVC
+from matplotlib.animation import FuncAnimation
 
 X, y = make_circles(n_samples=100, noise=0.1, factor=0.3, random_state=0)
-X = X.T
+X = X.T  # Transposer les données X
 y = y.reshape((1, y.shape[0]))
-
-print('dimensions de X:', X.shape)
-print('dimensions de y:', y.shape)
-
-plt.scatter(X[0, :], X[1, :], c=y, cmap='summer')
-plt.show()
 
 def initialisation(n0, n1, n2):
 
@@ -22,7 +18,7 @@ def initialisation(n0, n1, n2):
     b2 = np.random.randn(n2, 1)
     
     parametres = {
-        'w1': W1,
+        'W1': W1,
         'b1': b1,
         'W2': W2,
         'b2': b2,
@@ -30,7 +26,7 @@ def initialisation(n0, n1, n2):
     
     return parametres
 
-def forward_propagation(parametres):
+def forward_propagation(X, parametres):
     
     W1 = parametres['W1']
     b1 = parametres['b1']
@@ -101,12 +97,11 @@ def update(gradients, parametres, learning_rate):
     return parametres
 
 def predict(X, parametres):
-    
     activations = forward_propagation(X, parametres)
     A2 = activations['A2']
     return A2 >= 0.5
 
-def neural_network(X_train, y_train, n1, learning_rate = 0.1, n_iter = 1000):
+def neural_network(X_train, y_train, n1, learning_rate=0.1, n_iter=1000):
 
     n0 = X_train.shape[0]
     n2 = y_train.shape[0]
@@ -121,9 +116,8 @@ def neural_network(X_train, y_train, n1, learning_rate = 0.1, n_iter = 1000):
         gradients = back_propagation(X_train, y_train, activations, parametres)
         parametres = update(gradients, parametres, learning_rate)
         
-        if i %10 == 0:
-            
-            train_loss.append(log_loss(y_train, activations['A2']))
+        if i % 10 == 0:
+            train_loss.append(log_loss(y_train.flatten(), activations['A2'].flatten()))
             y_pred = predict(X_train, parametres)
             current_accuracy = accuracy_score(y_train.flatten(), y_pred.flatten())
             train_acc.append(current_accuracy)
@@ -137,6 +131,31 @@ def neural_network(X_train, y_train, n1, learning_rate = 0.1, n_iter = 1000):
     plt.legend()
     plt.show()
     
-    parametres = neural_network(X, y, n1=2, n_iter=1000, learning_rate=0.1)
-
     return parametres
+
+# Appel de la fonction neural_network à l'extérieur
+parametres = neural_network(X, y, n1=2, n_iter=1000, learning_rate=0.1)
+
+
+def update_plot(frame):
+    global X, y, ax, parametres
+    ax.clear()
+    xx, yy = np.meshgrid(np.linspace(X[0, :].min(), X[0, :].max(), 100),
+                         np.linspace(X[1, :].min(), X[1, :].max(), 100))
+    Z = predict(np.c_[xx.ravel(), yy.ravel()].T, parametres)
+    Z = Z.reshape(xx.shape)
+    ax.contourf(xx, yy, Z, alpha=0.3)
+    ax.scatter(X[0, :], X[1, :], c=y, cmap='summer')
+    plt.title('Frontière de décision en temps réel')
+    plt.xlabel('X1')
+    plt.ylabel('X2')
+    plt.axis('equal')
+
+# Générer les données
+X, y = make_circles(n_samples=100, noise=0.1, factor=0.3, random_state=0)
+X = X.T
+y = y.reshape((1, y.shape[0]))
+
+fig, ax = plt.subplots()
+ani = FuncAnimation(fig, update_plot, interval=1000, cache_frame_data=False)
+plt.show()
