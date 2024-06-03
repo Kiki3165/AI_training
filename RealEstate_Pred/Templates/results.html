@@ -3,18 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Résultats</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <title>Training Results</title>
 </head>
 <body>
-    <h1>Training Results</h1>
-    <h2>Training Loss and Mean Squared Error Over Iterations</h2>
-    <img src="{{ url_for('static', filename='training_history.png') }}" alt="Training History">
-    <h2>Distribution des Prix Moyens</h2>
-    <img src="{{ url_for('static', filename='distribution_prix.png') }}" alt="Distribution des Prix Moyens">
-    <h2>Scatter Plot de Surface Moyenne vs Nombre de Maisons</h2>
-    <img src="{{ url_for('static', filename='scatter_plot.png') }}" alt="Scatter Plot">
-    <h2>Scatter Plot de Surface Moyenne vs Nombre de Maisons avec Prédictions de Prix Moyens</h2>
-    <img src="{{ url_for('static', filename='scatter_plot_predictions.png') }}" alt="Scatter Plot with Predictions">
+    <h1>Résultats</h1>
+    <div>
+        <h2>Training History</h2>
+        <img src="{{ url_for('static', filename=training_history) }}" alt="Training History">
+    </div>
+    <div>
+        <h2>Distribution des Prix</h2>
+        <img src="{{ url_for('static', filename=distribution_prix) }}" alt="Distribution des Prix">
+    </div>
+    <div>
+        <h2>Scatter Plot</h2>
+        <img src="{{ url_for('static', filename=scatter_plot) }}" alt="Scatter Plot">
+    </div>
+    <div>
+        <h2>Scatter Plot avec Prédictions</h2>
+        <img src="{{ url_for('static', filename=scatter_plot_predictions) }}" alt="Scatter Plot Predictions">
+    </div>
 </body>
 </html>
