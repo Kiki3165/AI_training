@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>Training Results</title>
+</head>
+<body>
+    <h1>Training Results</h1>
+    <h2>Training Loss and Mean Squared Error Over Iterations</h2>
+    <img src="{{ url_for('static', filename='training_history.png') }}" alt="Training History">
+    <h2>Distribution des Prix Moyens</h2>
+    <img src="{{ url_for('static', filename='distribution_prix.png') }}" alt="Distribution des Prix Moyens">
+    <h2>Scatter Plot de Surface Moyenne vs Nombre de Maisons</h2>
+    <img src="{{ url_for('static', filename='scatter_plot.png') }}" alt="Scatter Plot">
+    <h2>Scatter Plot de Surface Moyenne vs Nombre de Maisons avec Prédictions de Prix Moyens</h2>
+    <img src="{{ url_for('static', filename='scatter_plot_predictions.png') }}" alt="Scatter Plot with Predictions">
+</body>
+</html>
