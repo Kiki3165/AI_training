@@ -2,8 +2,11 @@ from flask import Flask, render_template, request, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 import pandas as pd
 import numpy as np
+import matplotlib
+matplotlib.use('Agg')  # Utilisez 'Agg' pour éviter l'affichage interactif
 import matplotlib.pyplot as plt
-from ANN_morelayers import deep_neural_network, predict, initialisation, forward_propagation, back_propagation, update
+from ANN_morelayers import deep_neural_network, predict
+import time  # Importez le module time
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///comments.db'
@@ -26,12 +29,18 @@ def index():
             y = data['PrixMoyen'].values.reshape(1, -1)
             X = (X - np.mean(X, axis=1, keepdims=True)) / np.std(X, axis=1, keepdims=True)
 
-            hidden_layers = (64, 64, 64)
+            hidden_layers = (124, 124, 124)
             learning_rate = 1
-            n_iter = 500
+            n_iter = 1000
 
             training_history, parametres = deep_neural_network(X, y, hidden_layers, learning_rate, n_iter)
 
+            # Génération des graphiques
+
+            # Générez un horodatage unique pour les noms de fichier
+            timestamp = int(time.time())
+
+            # Graphique 1 : Courbes de perte et d'erreur quadratique moyenne
             plt.figure(figsize=(14, 6))
             plt.subplot(1, 2, 1)
             plt.plot(training_history[:, 0], label='Train Loss', color='blue')
@@ -50,18 +59,20 @@ def index():
             plt.grid(True)
 
             plt.tight_layout()
-            plt.savefig('static/training_history.png')
+            plt.savefig(f'static/training_history_{timestamp}.png')
             plt.close()
 
+            # Graphique 2 : Distribution des prix moyens
             plt.figure(figsize=(10, 6))
             plt.hist(data['PrixMoyen'], bins=30, color='purple', edgecolor='k', alpha=0.7)
             plt.title('Distribution des Prix Moyens')
             plt.xlabel('Prix Moyen')
             plt.ylabel('Fréquence')
             plt.grid(True)
-            plt.savefig('static/distribution_prix.png')
+            plt.savefig(f'static/distribution_prix_{timestamp}.png')
             plt.close()
 
+            # Graphique 3 : Nuage de points SurfaceMoyenne vs NbMaisons
             plt.figure(figsize=(10, 6))
             plt.scatter(data['SurfaceMoy'], data['NbMaisons'], c=data['Prixm2Moyen'], cmap='viridis', edgecolors='k', alpha=0.7)
             plt.colorbar(label='Prix au m² Moyen')
@@ -69,11 +80,11 @@ def index():
             plt.xlabel('Surface Moyenne (m²)')
             plt.ylabel('Nombre de Maisons')
             plt.grid(True)
-            plt.savefig('static/scatter_plot.png')
+            plt.savefig(f'static/scatter_plot_{timestamp}.png')
             plt.close()
 
+            # Graphique 4 : Nuage de points SurfaceMoyenne vs NbMaisons avec prédictions de prix moyens
             y_pred = predict(X, parametres).flatten()
-
             plt.figure(figsize=(10, 6))
             plt.scatter(data['SurfaceMoy'], data['NbMaisons'], c=y_pred, cmap='coolwarm', edgecolors='k', alpha=0.7)
             plt.colorbar(label='Prix Moyen Prédit')
@@ -81,7 +92,7 @@ def index():
             plt.xlabel('Surface Moyenne (m²)')
             plt.ylabel('Nombre de Maisons')
             plt.grid(True)
-            plt.savefig('static/scatter_plot_predictions.png')
+            plt.savefig(f'static/scatter_plot_predictions_{timestamp}.png')
             plt.close()
 
             return redirect(url_for('results'))
@@ -99,7 +110,7 @@ def comment():
     comment = Comment(username=username, content=content)
     db.session.add(comment)
     db.session.commit()
-    return redirect(url_for("comment_page"))
+    return redirect(url_for("comments"))
 
 @app.route("/comments")
 def comments():
