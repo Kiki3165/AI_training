@@ -2,7 +2,7 @@ import numpy as np
 from sklearn.metrics import mean_squared_error
 from tqdm import tqdm
 from joblib import Parallel, delayed
-
+# DNN
 def relu(Z):
     return np.maximum(0, Z)
 
