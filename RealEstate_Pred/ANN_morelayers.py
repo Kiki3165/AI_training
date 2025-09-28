@@ -84,7 +84,7 @@ def predict(X, params):
     return cache[f"A{C}"]
 
 # --- Entraînement ---
-def deep_neural_network(X, y, hidden_layers=(64, 64, 64), learning_rate=1e-4, n_iter=500, n_jobs=None):
+def deep_neural_network(X, y, hidden_layers=(124, 124, 124), learning_rate=1e-4, n_iter=500, n_jobs=None):
     """
     X: (n_features, m) float64
     y: (n_outputs, m) float64 (pour régression univariée: (1, m)), idéalement standardisé

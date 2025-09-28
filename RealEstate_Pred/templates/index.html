@@ -1,30 +1,31 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Neuralize — Analyse</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
-  <script defer src="{{ url_for('static', filename='app.js') }}"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neuralize</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
 </head>
+
 <body>
 <header class="site-header">
-  <h1>Neuralize</h1>
-  <nav class="actions">
-    <a class="btn outline" href="https://www.data.gouv.fr" target="_blank" rel="noopener">Source données</a>
-  </nav>
+    <div class="logo-container">
+        <img src="{{ url_for('static', filename='logo.png') }}" alt="Neuralize Logo" class="site-logo">
+    </div>
 </header>
+
+    {% block content %}{% endblock %}
 
 <main class="container">
   <section class="card">
     <h2>Importe ton CSV</h2>
     <p class="muted">Colonnes attendues : <code>SurfaceMoy</code>, <code>NbMaisons</code>, <code>Prixm2Moyen</code>, <code>PrixMoyen</code>.</p>
 
-    {% if error %}
-      <div class="alert error">{{ error }}</div>
-    {% endif %}
+    <div id="error-box" class="alert error hidden"></div>
 
-    <form class="upload" method="POST" enctype="multipart/form-data" id="upload-form">
+    <form class="upload" id="upload-form">
       <label class="dropzone" id="dropzone">
         <input type="file" name="file" id="file-input" accept=".csv" hidden />
         <div class="dz-inner">
@@ -36,6 +37,12 @@
         </div>
       </label>
 
+      <!-- Barre de progression -->
+      <div class="progress hidden" id="progress-wrap" aria-hidden="true">
+        <div class="progress-bar" id="progress-bar" style="width:0%"></div>
+        <span class="progress-text" id="progress-text">0%</span>
+      </div>
+
       <div class="form-row">
         <button class="btn primary" type="submit" id="analyze-btn">
           Analyser & générer les graphiques
@@ -45,7 +52,7 @@
     </form>
 
     <p class="muted small">
-      Astuce : l’entraînement peut prendre quelques secondes selon la taille du CSV.
+      Pendant l’upload tu verras la progression en %. Ensuite, le bouton affiche <em>Traitement…</em> le temps d’entraîner le modèle.
     </p>
   </section>
 </main>
