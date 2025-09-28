@@ -1,84 +1,128 @@
 import numpy as np
 from sklearn.metrics import mean_squared_error
-from tqdm import tqdm
-from joblib import Parallel, delayed
-# DNN
+
+# --- Activations ---
 def relu(Z):
     return np.maximum(0, Z)
 
 def relu_derivative(Z):
-    return np.where(Z > 0, 1, 0)
+    return (Z > 0).astype(Z.dtype)
 
-def xavier_initialisation(dimensions):
-    parametres = {}
-    C = len(dimensions)
-    np.random.seed(1)
-    for c in range(1, C):
-        parametres['W' + str(c)] = np.random.randn(dimensions[c], dimensions[c - 1]) * np.sqrt(1/dimensions[c - 1])
-        parametres['b' + str(c)] = np.zeros((dimensions[c], 1))
-    return parametres
-
-def initialisation(dimensions):
-    return xavier_initialisation(dimensions)
-
-def forward_propagation(X, parametres):
-    activations = {'A0': X}
-    C = len(parametres) // 2
+# --- Initialisation (He pour ReLU) ---
+def he_initialisation(dimensions, seed=1, dtype=np.float64):
+    params = {}
+    C = len(dimensions) - 1
+    rng = np.random.default_rng(seed)
     for c in range(1, C + 1):
-        Z = np.dot(parametres['W' + str(c)], activations['A' + str(c - 1)]) + parametres['b' + str(c)]
-        activations['A' + str(c)] = relu(Z)
-    return activations
+        fan_in = dimensions[c - 1]
+        fan_out = dimensions[c]
+        params[f"W{c}"] = rng.normal(0.0, np.sqrt(2.0 / fan_in), size=(fan_out, fan_in)).astype(dtype)
+        params[f"b{c}"] = np.zeros((fan_out, 1), dtype=dtype)
+    return params
 
-def back_propagation(y, parametres, activations):
+def initialisation(dimensions, dtype=np.float64):
+    return he_initialisation(dimensions, dtype=dtype)
+
+# --- Forward : ReLU cachées, sortie linéaire ---
+def forward_propagation(X, params):
+    cache = {"A0": X}
+    C = len(params) // 2
+    for c in range(1, C + 1):
+        W = params[f"W{c}"]
+        b = params[f"b{c}"]
+        A_prev = cache[f"A{c-1}"]
+        Z = W @ A_prev + b
+        cache[f"Z{c}"] = Z
+        cache[f"A{c}"] = relu(Z) if c < C else Z
+    return cache
+
+# --- Backprop : MSE ---
+def back_propagation(y, params, cache):
+    grads = {}
     m = y.shape[1]
-    C = len(parametres) // 2
-    dZ = activations['A' + str(C)] - y
-    gradients = {}
-    for c in reversed(range(1, C + 1)):
-        gradients['dW' + str(c)] = 1/m * np.dot(dZ, activations['A' + str(c - 1)].T)
-        gradients['db' + str(c)] = 1/m * np.sum(dZ, axis=1, keepdims=True)
-        if c > 1:
-            dZ = np.dot(parametres['W' + str(c)].T, dZ) * relu_derivative(activations['A' + str(c - 1)])
-    return gradients
+    C = len(params) // 2
+    A_C = cache[f"A{C}"]
+    dA = (2.0 / m) * (A_C - y)
 
-def update(gradients, parametres, learning_rate):
-    C = len(parametres) // 2
+    for c in range(C, 0, -1):
+        Z = cache[f"Z{c}"]
+        A_prev = cache[f"A{c-1}"]
+        W = params[f"W{c}"]
+
+        dZ = dA if c == C else dA * relu_derivative(Z)
+        grads[f"dW{c}"] = dZ @ A_prev.T
+        grads[f"db{c}"] = np.sum(dZ, axis=1, keepdims=True)
+        dA = W.T @ dZ
+    return grads
+
+def clip_grads_(grads, max_norm=5.0):
+    """Clip L2 des gradients pour éviter l'explosion."""
+    total_sq = 0.0
+    keys = [k for k in grads if k.startswith("dW")] + [k for k in grads if k.startswith("db")]
+    for k in keys:
+        g = grads[k]
+        total_sq += np.sum(g * g)
+    norm = np.sqrt(total_sq)
+    if not np.isfinite(norm) or norm == 0.0:
+        return grads
+    scale = max_norm / max(norm, max_norm)
+    if scale < 1.0:
+        for k in keys:
+            grads[k] *= scale
+    return grads
+
+def update(grads, params, lr):
+    C = len(params) // 2
     for c in range(1, C + 1):
-        parametres['W' + str(c)] -= learning_rate * gradients['dW' + str(c)]
-        parametres['b' + str(c)] -= learning_rate * gradients['db' + str(c)]
-    return parametres
+        params[f"W{c}"] -= lr * grads[f"dW{c}"]
+        params[f"b{c}"] -= lr * grads[f"db{c}"]
+    return params
 
-def predict(X, parametres):
-    activations = forward_propagation(X, parametres)
-    C = len(parametres) // 2
-    Af = activations['A' + str(C)]
-    return Af
+def predict(X, params):
+    cache = forward_propagation(X, params)
+    C = len(params) // 2
+    return cache[f"A{C}"]
 
-def train_network(X, y, parametres, learning_rate):
-    activations = forward_propagation(X, parametres)
-    gradients = back_propagation(y, parametres, activations)
-    parametres = update(gradients, parametres, learning_rate)
-    Af = activations['A' + str(len(parametres) // 2)]
-    return mean_squared_error(y.flatten(), Af.flatten())
+# --- Entraînement ---
+def deep_neural_network(X, y, hidden_layers=(64, 64, 64), learning_rate=1e-4, n_iter=500, n_jobs=None):
+    """
+    X: (n_features, m) float64
+    y: (n_outputs, m) float64 (pour régression univariée: (1, m)), idéalement standardisé
+    """
+    X = X.astype(np.float64, copy=False)
+    y = y.astype(np.float64, copy=False)
 
-def deep_neural_network(X, y, hidden_layers=(64, 64, 64), learning_rate=1, n_iter=1000, n_jobs=-1):
-    dimensions = list(hidden_layers)
-    dimensions.insert(0, X.shape[0])
-    dimensions.append(y.shape[0])
-    np.random.seed(1)
-    parametres = initialisation(dimensions)
-    training_history = np.zeros((int(n_iter), 2))
-    C = len(parametres) // 2
-    for i in tqdm(range(n_iter)):
-        error_list = Parallel(n_jobs=n_jobs)(
-            delayed(train_network)(X, y, parametres, learning_rate)
-            for _ in range(n_jobs)
-        )
-        error_list = [error for error in error_list if not np.isnan(error)]  # Filtrer les valeurs nan
-        if error_list:
-            training_history[i, 0] = np.nanmean(error_list)  # Utiliser np.nanmean pour éviter les nan
+    dims = [X.shape[0], *hidden_layers, y.shape[0]]
+    params = initialisation(dims, dtype=np.float64)
+
+    history = np.zeros((int(n_iter), 2), dtype=np.float64)
+    last_mse = np.inf
+    patience = 25
+    worse = 0
+
+    for i in range(n_iter):
+        cache = forward_propagation(X, params)
+        y_pred = cache[f"A{len(dims) - 1}"]
+
+        mse = mean_squared_error(y.flatten(), y_pred.flatten())
+        if not np.isfinite(mse):
+            history = history[: i]
+            break
+
+        history[i, 0] = mse
+        history[i, 1] = mse
+
+        grads = back_propagation(y, params, cache)
+        grads = clip_grads_(grads, max_norm=5.0)
+        params = update(grads, params, learning_rate)
+
+        if mse > last_mse * 1.1:
+            worse += 1
         else:
-            training_history[i, 0] = np.nan  # Si toutes les valeurs sont nan, définir le résultat comme nan
-        y_pred = predict(X, parametres)
-        training_history[i, 1] = mean_squared_error(y.flatten(), y_pred.flatten())
-    return training_history, parametres
+            worse = 0
+        last_mse = mse
+        if worse >= patience:
+            history = history[: i + 1]
+            break
+
+    return history, params

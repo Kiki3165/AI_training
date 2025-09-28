@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Neuralize — Analyse</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  <script defer src="{{ url_for('static', filename='app.js') }}"></script>
+</head>
+<body>
+<header class="site-header">
+  <h1>Neuralize</h1>
+  <nav class="actions">
+    <a class="btn outline" href="https://www.data.gouv.fr" target="_blank" rel="noopener">Source données</a>
+  </nav>
+</header>
+
+<main class="container">
+  <section class="card">
+    <h2>Importe ton CSV</h2>
+    <p class="muted">Colonnes attendues : <code>SurfaceMoy</code>, <code>NbMaisons</code>, <code>Prixm2Moyen</code>, <code>PrixMoyen</code>.</p>
+
+    {% if error %}
+      <div class="alert error">{{ error }}</div>
+    {% endif %}
+
+    <form class="upload" method="POST" enctype="multipart/form-data" id="upload-form">
+      <label class="dropzone" id="dropzone">
+        <input type="file" name="file" id="file-input" accept=".csv" hidden />
+        <div class="dz-inner">
+          <div class="dz-icon">📄</div>
+          <div class="dz-text">
+            <strong>Glisse-dépose</strong> ton fichier ici ou <span class="link">clique pour parcourir</span>
+          </div>
+          <div class="dz-hint muted">CSV uniquement</div>
+        </div>
+      </label>
+
+      <div class="form-row">
+        <button class="btn primary" type="submit" id="analyze-btn">
+          Analyser & générer les graphiques
+        </button>
+        <div id="spinner" class="spinner hidden" aria-hidden="true"></div>
+      </div>
+    </form>
+
+    <p class="muted small">
+      Astuce : l’entraînement peut prendre quelques secondes selon la taille du CSV.
+    </p>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <span>© {{ 2025 }} Neuralize</span>
+</footer>
+</body>
+</html>

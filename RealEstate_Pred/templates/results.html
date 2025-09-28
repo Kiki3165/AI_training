@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Neuralize — Résultats</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  <script defer src="{{ url_for('static', filename='app.js') }}"></script>
+</head>
+<body>
+<header class="site-header">
+  <h1>Neuralize — Résultats</h1>
+  <nav class="actions">
+    <a class="btn" href="{{ url_for('index') }}">⟵ Revenir</a>
+  </nav>
+</header>
+
+<main class="container">
+  <section class="grid">
+    <article class="card">
+      <h3>Historique d’entraînement (MSE)</h3>
+      <div class="img-wrap zoomable">
+        <img src="{{ url_for('static', filename=train) }}" alt="Courbe MSE" />
+      </div>
+    </article>
+
+    <article class="card">
+      <h3>Distribution des prix moyens</h3>
+      <div class="img-wrap zoomable">
+        <img src="{{ url_for('static', filename=prix) }}" alt="Histogramme prix moyens" />
+      </div>
+    </article>
+
+    <article class="card">
+      <h3>Surface vs Nb de maisons (réel)</h3>
+      <div class="img-wrap zoomable">
+        <img src="{{ url_for('static', filename=scatter) }}" alt="Scatter réel" />
+      </div>
+    </article>
+
+    <article class="card">
+      <h3>Surface vs Nb de maisons (prédictions)</h3>
+      <div class="img-wrap zoomable">
+        <img src="{{ url_for('static', filename=scatter_pred) }}" alt="Scatter prédiction" />
+      </div>
+    </article>
+  </section>
+</main>
+
+<!-- Lightbox -->
+<div id="lightbox" class="lightbox hidden" aria-hidden="true">
+  <img id="lightbox-img" src="" alt="Agrandissement" />
+</div>
+
+<footer class="site-footer">
+  <span>© {{ 2025 }} Neuralize</span>
+</footer>
+</body>
+</html>
